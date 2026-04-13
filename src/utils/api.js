@@ -7,7 +7,9 @@ import toast from 'react-hot-toast'
 import { useAuthStore } from '../store'   // <-- import the store
 
 // ✅ Load API base URL from Vite environment variables
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const BASE_URL = 'https://banesco-9drg.onrender.com'
+
+// const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 const api = axios.create({
   baseURL: BASE_URL,

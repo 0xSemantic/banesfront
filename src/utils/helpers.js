@@ -4,7 +4,8 @@
 import { format, formatDistanceToNow, parseISO } from 'date-fns'
 
 // ✅ Load default currency from environment
-const DEFAULT_CURRENCY = import.meta.env.VITE_DEFAULT_CURRENCY || 'USD'
+const DEFAULT_CURRENCY = 'USD'
+// const DEFAULT_CURRENCY = import.meta.env.VITE_DEFAULT_CURRENCY || 'USD'
 
 // ── CURRENCY FORMATTING ────────────────────────────────────────────────────
 const CURRENCY_SYMBOLS = { USD: '$', GBP: '£', EUR: '€', NGN: '₦', JPY: '¥', CAD: 'CA$' }

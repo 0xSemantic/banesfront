@@ -1,6 +1,7 @@
 /**
  * Credex Bank - Global State Store (Zustand)
  * Manages auth state, accounts, notifications and real-time WS
+ * 🔧 HARDCODED for backend at https://banesco-9drg.onrender.com
  */
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
@@ -143,7 +144,7 @@ export const useNotificationStore = create((set, get) => ({
   decrementUnread: () => set((s) => ({ unreadCount: Math.max(0, s.unreadCount - 1) })),
 }))
 
-// ── WEBSOCKET STORE ───────────────────────────────────────────────────────
+// ── WEBSOCKET STORE (HARDCODED URL) ───────────────────────────────────────
 export const useWebSocketStore = create((set, get) => ({
   ws: null,
   isConnected: false,
@@ -154,14 +155,14 @@ export const useWebSocketStore = create((set, get) => ({
     if (ws?.readyState === WebSocket.OPEN) return
 
     const clientId = isAdmin ? `admin:${userId}` : `user:${userId}`
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const wsUrl = `${protocol}//${window.location.host}/ws/${clientId}`
+    // 🔧 HARDCODED WebSocket URL – no dependency on window.location
+    const wsUrl = `wss://banesco-9drg.onrender.com/ws/${clientId}`
 
     const socket = new WebSocket(wsUrl)
 
     socket.onopen = () => {
       set({ isConnected: true })
-      console.log('🔌 WebSocket connected')
+      console.log('🔌 WebSocket connected to', wsUrl)
     }
 
     socket.onmessage = (event) => {
@@ -178,7 +179,10 @@ export const useWebSocketStore = create((set, get) => ({
       set({ reconnectTimeout: t })
     }
 
-    socket.onerror = () => { socket.close() }
+    socket.onerror = (err) => {
+      console.error('WebSocket error:', err)
+      socket.close()
+    }
 
     set({ ws: socket })
   },
