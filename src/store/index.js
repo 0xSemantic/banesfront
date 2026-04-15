@@ -1,7 +1,6 @@
 /**
  * Credex Bank - Global State Store (Zustand)
  * Manages auth state, accounts, notifications and real-time WS
- * 🔧 HARDCODED for backend at https://banesco-9drg.onrender.com
  */
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
@@ -60,11 +59,20 @@ export const useAuthStore = create(
         set({ token: null, user: null, isAuthenticated: false })
       },
 
-      refreshProfile: async () => {
+      // Refreshes user data from backend (used after KYC approval, etc.)
+      refreshUser: async () => {
         try {
           const res = await api.get('/auth/me')
           set({ user: res.data })
-        } catch {}
+          return res.data
+        } catch (err) {
+          console.error('Failed to refresh user', err)
+        }
+      },
+
+      // Alias for backward compatibility
+      refreshProfile: async () => {
+        return get().refreshUser()
       },
 
       updateUser: (updates) => set((s) => ({ user: { ...s.user, ...updates } })),
@@ -144,30 +152,32 @@ export const useNotificationStore = create((set, get) => ({
   decrementUnread: () => set((s) => ({ unreadCount: Math.max(0, s.unreadCount - 1) })),
 }))
 
-// ── WEBSOCKET STORE (HARDCODED URL) ───────────────────────────────────────
+// ── WEBSOCKET STORE ───────────────────────────────────────────────────────
 export const useWebSocketStore = create((set, get) => ({
   ws: null,
   isConnected: false,
   reconnectTimeout: null,
+  lastMessage: null,  // <-- added to track latest message
 
   connect: (userId, isAdmin = false) => {
     const { ws } = get()
     if (ws?.readyState === WebSocket.OPEN) return
 
     const clientId = isAdmin ? `admin:${userId}` : `user:${userId}`
-    // 🔧 HARDCODED WebSocket URL – no dependency on window.location
-    const wsUrl = `wss://banesco-9drg.onrender.com/ws/${clientId}`
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    const wsUrl = `${protocol}//${window.location.host}/ws/${clientId}`
 
     const socket = new WebSocket(wsUrl)
 
     socket.onopen = () => {
       set({ isConnected: true })
-      console.log('🔌 WebSocket connected to', wsUrl)
+      console.log('🔌 WebSocket connected')
     }
 
     socket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data)
+        set({ lastMessage: data })  // store last message
         handleWsMessage(data)
       } catch {}
     }
@@ -179,10 +189,7 @@ export const useWebSocketStore = create((set, get) => ({
       set({ reconnectTimeout: t })
     }
 
-    socket.onerror = (err) => {
-      console.error('WebSocket error:', err)
-      socket.close()
-    }
+    socket.onerror = () => { socket.close() }
 
     set({ ws: socket })
   },
@@ -191,7 +198,7 @@ export const useWebSocketStore = create((set, get) => ({
     const { ws, reconnectTimeout } = get()
     if (reconnectTimeout) clearTimeout(reconnectTimeout)
     if (ws) ws.close()
-    set({ ws: null, isConnected: false })
+    set({ ws: null, isConnected: false, lastMessage: null })
   },
 
   send: (data) => {
@@ -224,5 +231,11 @@ function handleWsMessage(data) {
     const { refreshAccounts } = useAccountStore.getState()
     refreshAccounts()
     toast.success(data.message || 'Request updated')
+  }
+  // NEW: Handle KYC verification event
+  if (type === 'kyc_verified' || (data.data?.notification_type === 'kyc_verified')) {
+    const { refreshUser } = useAuthStore.getState()
+    refreshUser()
+    toast.success('Your identity has been verified!', { icon: '✅' })
   }
 }
