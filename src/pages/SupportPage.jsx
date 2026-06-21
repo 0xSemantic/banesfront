@@ -1,8 +1,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { useAuthStore } from '../store';
 import api from '../utils/api';
-import { Send, XCircle, MessageCircle } from 'lucide-react';
+import { Send, XCircle, MessageCircle, Menu, ChevronLeft } from 'lucide-react';
 import { PageHeader, Alert } from '../components/ui';
+import clsx from 'clsx';
 
 export default function SupportPage() {
   const { user } = useAuthStore();
@@ -13,6 +14,7 @@ export default function SupportPage() {
   const [ws, setWs] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const messagesEndRef = useRef(null);
 
   // Load sessions
@@ -35,7 +37,7 @@ export default function SupportPage() {
     loadSessions();
   }, []);
 
-  // WebSocket connection when a session is opened
+  // WebSocket connection
   useEffect(() => {
     if (!currentSession) return;
 
@@ -46,7 +48,6 @@ export default function SupportPage() {
       return;
     }
 
-    // 🔧 HARDCODED WebSocket URL (no env var)
     const wsUrl = `wss://banesco-9drg.onrender.com/ws/chat/${currentSession.id}?token=${token}`;
     const socket = new WebSocket(wsUrl);
     
@@ -76,7 +77,6 @@ export default function SupportPage() {
     
     setWs(socket);
     
-    // Load previous messages
     api.get(`/chat/sessions/${currentSession.id}/messages`)
       .then(res => {
         const msgs = Array.isArray(res.data) ? res.data : [];
@@ -91,7 +91,7 @@ export default function SupportPage() {
     };
   }, [currentSession]);
 
-  // Auto-scroll to bottom
+  // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -119,6 +119,7 @@ export default function SupportPage() {
       setSessions(prev => [res.data, ...prev]);
       setCurrentSession(res.data);
       setError(null);
+      setSidebarOpen(false); // close sidebar on mobile after selection
     } catch (err) {
       console.error(err);
       alert('Could not start new chat. Please try again.');
@@ -137,38 +138,69 @@ export default function SupportPage() {
     }
   };
 
+  const selectSession = (session) => {
+    setCurrentSession(session);
+    setSidebarOpen(false);
+  };
+
   if (loading && sessions.length === 0) {
     return <div className="flex justify-center py-12"><div className="spinner" /></div>;
   }
   if (error) return <Alert type="danger" message={error} />;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <PageHeader title="Customer Support" subtitle="Chat with our support team" />
-      <div className="flex h-[calc(100vh-200px)]">
-        {/* Sidebar */}
-        <div className="w-80 border-r border-bank-border bg-bank-surface rounded-l-2xl p-4 overflow-y-auto">
-          <button
-            onClick={createNewSession}
-            className="w-full mb-4 bg-primary-600 text-white py-2 rounded-xl hover:bg-primary-700 transition"
-          >
-            + New Chat
-          </button>
+
+      {/* Mobile: toggle sidebar button */}
+      <div className="md:hidden flex items-center gap-3">
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="p-2 rounded-xl bg-bank-surface border border-bank-border text-bank-muted"
+        >
+          <Menu size={20} />
+        </button>
+        <span className="text-sm font-semibold text-bank-light">
+          {currentSession ? `Session #${currentSession.id}` : 'Select a chat'}
+        </span>
+      </div>
+
+      <div className="flex flex-col md:flex-row gap-4 min-h-[70vh]">
+        {/* Sidebar - hidden on mobile unless toggled */}
+        <div
+          className={clsx(
+            'md:w-72 lg:w-80 flex-shrink-0 bg-bank-surface rounded-2xl border border-bank-border p-4 overflow-y-auto transition-all duration-300',
+            'md:block',
+            sidebarOpen ? 'block' : 'hidden'
+          )}
+          style={{ maxHeight: 'calc(100vh - 220px)' }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold text-bank-muted">Conversations</h3>
+            <button
+              onClick={createNewSession}
+              className="text-xs bg-primary-600 text-white px-3 py-1.5 rounded-lg hover:bg-primary-700 transition"
+            >
+              + New
+            </button>
+          </div>
+
           <div className="space-y-2">
             {sessions.length === 0 && !loading && (
-              <div className="text-center text-bank-muted py-8 text-sm">
+              <div className="text-center text-bank-muted py-6 text-sm">
                 No conversations yet.<br />Start a new chat.
               </div>
             )}
             {sessions.map(s => (
               <div
                 key={s.id}
-                onClick={() => setCurrentSession(s)}
-                className={`p-3 rounded-xl cursor-pointer transition ${
+                onClick={() => selectSession(s)}
+                className={clsx(
+                  'p-3 rounded-xl cursor-pointer transition',
                   currentSession?.id === s.id
                     ? 'bg-primary-600/20 border-l-4 border-primary-600'
                     : 'hover:bg-bank-dark'
-                }`}
+                )}
               >
                 <p className="font-medium text-bank-light">Session #{s.id}</p>
                 <p className="text-xs text-bank-muted">
@@ -183,39 +215,51 @@ export default function SupportPage() {
         </div>
 
         {/* Chat area */}
-        <div className="flex-1 flex flex-col bg-bank-dark rounded-r-2xl">
+        <div className="flex-1 flex flex-col bg-bank-dark rounded-2xl border border-bank-border overflow-hidden min-h-[400px]">
           {currentSession ? (
             <>
-              <div className="border-b border-bank-border p-4 bg-bank-surface flex justify-between items-center rounded-tr-2xl">
-                <div className="text-bank-light font-semibold">
-                  Support Chat – Session #{currentSession.id}
+              {/* Header */}
+              <div className="border-b border-bank-border p-3 sm:p-4 bg-bank-surface flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  {sidebarOpen && (
+                    <button
+                      onClick={() => setSidebarOpen(false)}
+                      className="md:hidden p-1 text-bank-muted"
+                    >
+                      <ChevronLeft size={18} />
+                    </button>
+                  )}
+                  <div className="text-bank-light font-semibold text-sm sm:text-base">
+                    Support Chat – Session #{currentSession.id}
+                  </div>
                 </div>
                 {currentSession.status === 'open' && (
                   <button
                     onClick={closeSession}
-                    className="text-red-400 flex items-center gap-1 hover:text-red-300 transition"
+                    className="text-red-400 flex items-center gap-1 hover:text-red-300 transition text-xs sm:text-sm"
                   >
-                    <XCircle size={18} /> Close
+                    <XCircle size={16} /> Close
                   </button>
                 )}
               </div>
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3">
                 {messages.map(msg => (
                   <div
                     key={msg.id}
-                    className={`flex ${
-                      msg.sender_id === user.id ? 'justify-end' : 'justify-start'
-                    }`}
+                    className={`flex ${msg.sender_id === user.id ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`max-w-[70%] rounded-2xl p-3 ${
+                      className={clsx(
+                        'max-w-[85%] sm:max-w-[70%] rounded-2xl p-3',
                         msg.sender_id === user.id
                           ? 'bg-primary-600 text-white'
                           : 'bg-bank-surface text-bank-light shadow'
-                      }`}
+                      )}
                     >
-                      <p>{msg.content}</p>
-                      <p className="text-xs mt-1 opacity-70">
+                      <p className="text-sm break-words">{msg.content}</p>
+                      <p className="text-[10px] mt-1 opacity-70">
                         {new Date(msg.timestamp).toLocaleTimeString()}
                       </p>
                     </div>
@@ -223,29 +267,31 @@ export default function SupportPage() {
                 ))}
                 <div ref={messagesEndRef} />
               </div>
+
+              {/* Input area */}
               {currentSession.status === 'open' && (
-                <div className="border-t border-bank-border p-4 bg-bank-surface flex gap-2 rounded-br-2xl">
+                <div className="border-t border-bank-border p-3 sm:p-4 bg-bank-surface flex gap-2">
                   <input
                     type="text"
                     value={newMessage}
                     onChange={e => setNewMessage(e.target.value)}
                     onKeyPress={e => e.key === 'Enter' && sendMessage()}
-                    className="flex-1 bg-bank-dark border border-bank-border rounded-xl px-4 py-2 text-bank-light focus:outline-none focus:border-primary-600"
+                    className="flex-1 bg-bank-dark border border-bank-border rounded-xl px-4 py-2.5 text-sm text-bank-light focus:outline-none focus:border-primary-600"
                     placeholder="Type your message..."
                   />
                   <button
                     onClick={sendMessage}
-                    className="bg-primary-600 text-white px-4 rounded-xl hover:bg-primary-700 transition"
+                    className="bg-primary-600 text-white px-4 py-2.5 rounded-xl hover:bg-primary-700 transition flex-shrink-0"
                   >
-                    <Send size={20} />
+                    <Send size={18} />
                   </button>
                 </div>
               )}
             </>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-bank-muted">
+            <div className="flex-1 flex flex-col items-center justify-center text-bank-muted p-6">
               <MessageCircle size={48} className="mb-3 opacity-40" />
-              <p>Select a conversation or start a new chat</p>
+              <p className="text-center">Select a conversation or start a new chat</p>
             </div>
           )}
         </div>

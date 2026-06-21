@@ -1,8 +1,11 @@
 /**
- * Credex Bank - Profile Page
+ * Credex Bank - Profile Page (Mobile-Optimized)
  */
 import { useState } from 'react'
-import { User, Mail, Phone, MapPin, Calendar, Shield, Lock, CheckCircle, AlertCircle, Edit2 } from 'lucide-react'
+import {
+  User, Mail, Phone, MapPin, Calendar, Shield, Lock, CheckCircle,
+  Edit2, ChevronRight
+} from 'lucide-react'
 import { useAuthStore } from '../store'
 import api from '../utils/api'
 import { formatDate } from '../utils/helpers'
@@ -62,20 +65,20 @@ export default function ProfilePage() {
   const kycColor = kycColors[user?.kyc_status] || '#8899b5'
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-2xl mx-auto space-y-6 px-3 sm:px-0">
       <PageHeader title="Profile" subtitle="Manage your personal information" />
 
-      {/* Profile header card */}
-      <div className="bank-card p-6 flex items-center gap-5">
+      {/* ── Profile Header Card ── */}
+      <div className="bank-card p-4 sm:p-6 flex flex-col sm:flex-row items-center gap-4 sm:gap-5">
         <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold text-white flex-shrink-0"
           style={{ background: 'linear-gradient(135deg, #1d4ed8, #0891b2)' }}>
           {user?.full_name?.charAt(0) || 'U'}
         </div>
-        <div className="flex-1">
-          <div className="text-lg font-bold text-bank-light">{user?.full_name}</div>
-          <div className="text-sm text-bank-muted">{user?.email}</div>
-          <div className="flex items-center gap-3 mt-2">
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
+        <div className="flex-1 w-full text-center sm:text-left">
+          <div className="text-lg font-bold text-bank-light break-words">{user?.full_name}</div>
+          <div className="text-sm text-bank-muted break-all">{user?.email}</div>
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-2">
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full inline-block"
               style={{ background: `${kycColor}20`, color: kycColor, border: `1px solid ${kycColor}40` }}>
               KYC: {user?.kyc_status?.toUpperCase()}
             </span>
@@ -86,16 +89,16 @@ export default function ProfilePage() {
             )}
           </div>
         </div>
-        <button onClick={() => setEditing(e => !e)} className="btn-secondary text-xs py-2">
-          <Edit2 size={13} /> {editing ? 'Cancel' : 'Edit'}
+        <button onClick={() => setEditing(e => !e)} className="btn-secondary text-xs py-2 px-4 w-full sm:w-auto">
+          <Edit2 size={13} className="inline mr-1" /> {editing ? 'Cancel' : 'Edit'}
         </button>
       </div>
 
-      {/* KYC Alert */}
+      {/* ── KYC Alert ── */}
       {user?.kyc_status !== 'verified' && (
-        <div className="bank-card p-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+        <div className="bank-card p-4 flex flex-col sm:flex-row items-center gap-3 justify-between">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
               style={{ background: 'rgba(245,158,11,0.15)' }}>
               <Shield size={16} className="text-amber-400" />
             </div>
@@ -106,17 +109,18 @@ export default function ProfilePage() {
               </div>
             </div>
           </div>
-          <button onClick={handleKycSubmit} className="btn-primary text-xs py-2">
+          <button onClick={handleKycSubmit} className="btn-primary text-xs py-2 px-4 w-full sm:w-auto">
             {user?.kyc_status === 'pending' ? 'Resubmit' : 'Verify Now'}
           </button>
         </div>
       )}
 
-      {/* Personal Info */}
-      <div className="bank-card p-5">
+      {/* ── Personal Info ── */}
+      <div className="bank-card p-4 sm:p-5">
         <h3 className="text-sm font-bold text-bank-light mb-4 flex items-center gap-2">
-          <User size={15} className="text-bank-muted" /> Personal Information
+          <User size={15} className="text-bank-muted flex-shrink-0" /> Personal Information
         </h3>
+
         {editing ? (
           <div className="space-y-4">
             <FormGroup label="Full Name">
@@ -136,13 +140,13 @@ export default function ProfilePage() {
                 {['USD', 'GBP', 'EUR'].map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </FormGroup>
-            <div className="flex gap-3 pt-2">
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <button onClick={() => setEditing(false)} className="btn-secondary flex-1">Cancel</button>
               <LoadingButton loading={submitting} onClick={handleSave} className="btn-primary flex-1 justify-center">Save Changes</LoadingButton>
             </div>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="divide-y divide-bank-border">
             {[
               { icon: User, label: 'Full Name', value: user?.full_name },
               { icon: Mail, label: 'Email', value: user?.email },
@@ -151,27 +155,27 @@ export default function ProfilePage() {
               { icon: Calendar, label: 'Date of Birth', value: user?.date_of_birth || '—' },
               { icon: Calendar, label: 'Member Since', value: formatDate(user?.created_at) },
             ].map(({ icon: Icon, label, value }) => (
-              <div key={label} className="flex items-center gap-3 py-2 border-b border-bank-border last:border-0">
+              <div key={label} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
                 <Icon size={14} className="text-bank-muted flex-shrink-0" />
-                <span className="text-xs text-bank-muted w-28 flex-shrink-0">{label}</span>
-                <span className="text-sm text-bank-light">{value}</span>
+                <span className="text-xs text-bank-muted w-20 sm:w-28 flex-shrink-0">{label}</span>
+                <span className="text-sm text-bank-light break-words flex-1 min-w-0">{value}</span>
               </div>
             ))}
           </div>
         )}
       </div>
 
-      {/* Security */}
-      <div className="bank-card p-5">
+      {/* ── Security ── */}
+      <div className="bank-card p-4 sm:p-5">
         <h3 className="text-sm font-bold text-bank-light mb-4 flex items-center gap-2">
-          <Lock size={15} className="text-bank-muted" /> Security
+          <Lock size={15} className="text-bank-muted flex-shrink-0" /> Security
         </h3>
         <div className="flex items-center justify-between py-3 border-b border-bank-border">
           <div>
             <div className="text-sm font-semibold text-bank-light">Password</div>
             <div className="text-xs text-bank-muted">Last changed: Unknown</div>
           </div>
-          <button onClick={() => setShowChangePass(true)} className="btn-secondary text-xs py-2">Change</button>
+          <button onClick={() => setShowChangePass(true)} className="btn-secondary text-xs py-2 px-4">Change</button>
         </div>
         <div className="flex items-center justify-between py-3">
           <div>
@@ -181,7 +185,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Change Password Modal */}
+      {/* ── Change Password Modal ── */}
       <Modal isOpen={showChangePass} onClose={() => setShowChangePass(false)} title="Change Password">
         <div className="space-y-4">
           <FormGroup label="Current Password">
@@ -196,7 +200,7 @@ export default function ProfilePage() {
           {passForm.new_password && passForm.confirm_password && passForm.new_password !== passForm.confirm_password && (
             <p className="text-xs text-red-400">Passwords do not match</p>
           )}
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <button onClick={() => setShowChangePass(false)} className="btn-secondary flex-1">Cancel</button>
             <LoadingButton loading={submitting} onClick={handleChangePass} className="btn-primary flex-1 justify-center">Update Password</LoadingButton>
           </div>
