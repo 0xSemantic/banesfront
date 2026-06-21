@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useAuthStore } from '../store';
 import api from '../utils/api';
-import { Send, XCircle, MessageCircle, Menu, ChevronLeft } from 'lucide-react';
+import { Send, XCircle, MessageCircle, Menu, X } from 'lucide-react';
 import { PageHeader, Alert } from '../components/ui';
 import clsx from 'clsx';
 
@@ -14,7 +14,7 @@ export default function SupportPage() {
   const [ws, setWs] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const messagesEndRef = useRef(null);
 
   // Load sessions
@@ -37,7 +37,7 @@ export default function SupportPage() {
     loadSessions();
   }, []);
 
-  // WebSocket connection
+  // WebSocket
   useEffect(() => {
     if (!currentSession) return;
 
@@ -91,7 +91,6 @@ export default function SupportPage() {
     };
   }, [currentSession]);
 
-  // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -119,7 +118,7 @@ export default function SupportPage() {
       setSessions(prev => [res.data, ...prev]);
       setCurrentSession(res.data);
       setError(null);
-      setSidebarOpen(false); // close sidebar on mobile after selection
+      setDrawerOpen(false);
     } catch (err) {
       console.error(err);
       alert('Could not start new chat. Please try again.');
@@ -140,7 +139,7 @@ export default function SupportPage() {
 
   const selectSession = (session) => {
     setCurrentSession(session);
-    setSidebarOpen(false);
+    setDrawerOpen(false);
   };
 
   if (loading && sessions.length === 0) {
@@ -152,36 +151,35 @@ export default function SupportPage() {
     <div className="space-y-4">
       <PageHeader title="Customer Support" subtitle="Chat with our support team" />
 
-      {/* Mobile: toggle sidebar button */}
-      <div className="md:hidden flex items-center gap-3">
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="p-2 rounded-xl bg-bank-surface border border-bank-border text-bank-muted"
-        >
-          <Menu size={20} />
-        </button>
-        <span className="text-sm font-semibold text-bank-light">
-          {currentSession ? `Session #${currentSession.id}` : 'Select a chat'}
-        </span>
-      </div>
-
-      <div className="flex flex-col md:flex-row gap-4 min-h-[70vh]">
-        {/* Sidebar - hidden on mobile unless toggled */}
+      <div className="flex flex-col md:flex-row gap-4 min-h-[70vh] relative">
+        {/* ── Sidebar (desktop: always visible; mobile: drawer) ── */}
         <div
           className={clsx(
             'md:w-72 lg:w-80 flex-shrink-0 bg-bank-surface rounded-2xl border border-bank-border p-4 overflow-y-auto transition-all duration-300',
             'md:block',
-            sidebarOpen ? 'block' : 'hidden'
+            drawerOpen
+              ? 'fixed inset-y-0 left-0 z-50 w-80 rounded-none shadow-2xl'
+              : 'hidden md:block'
           )}
-          style={{ maxHeight: 'calc(100vh - 220px)' }}
+          style={{ maxHeight: 'calc(100vh - 160px)' }}
         >
+          {/* Close button inside drawer (mobile) */}
+          {drawerOpen && (
+            <div className="flex items-center justify-between mb-4 md:hidden">
+              <h3 className="text-sm font-bold text-bank-muted">Conversations</h3>
+              <button onClick={() => setDrawerOpen(false)} className="p-1 text-bank-muted">
+                <X size={20} />
+              </button>
+            </div>
+          )}
+
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold text-bank-muted">Conversations</h3>
+            <h3 className="text-sm font-bold text-bank-muted hidden md:block">Conversations</h3>
             <button
               onClick={createNewSession}
               className="text-xs bg-primary-600 text-white px-3 py-1.5 rounded-lg hover:bg-primary-700 transition"
             >
-              + New
+              + New Chat
             </button>
           </div>
 
@@ -214,29 +212,36 @@ export default function SupportPage() {
           </div>
         </div>
 
-        {/* Chat area */}
+        {/* ── Backdrop for mobile drawer ── */}
+        {drawerOpen && (
+          <div
+            className="fixed inset-0 z-40 bg-black/50 md:hidden"
+            onClick={() => setDrawerOpen(false)}
+          />
+        )}
+
+        {/* ── Chat Area ── */}
         <div className="flex-1 flex flex-col bg-bank-dark rounded-2xl border border-bank-border overflow-hidden min-h-[400px]">
           {currentSession ? (
             <>
-              {/* Header */}
+              {/* Header with menu button (mobile) */}
               <div className="border-b border-bank-border p-3 sm:p-4 bg-bank-surface flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  {sidebarOpen && (
-                    <button
-                      onClick={() => setSidebarOpen(false)}
-                      className="md:hidden p-1 text-bank-muted"
-                    >
-                      <ChevronLeft size={18} />
-                    </button>
-                  )}
-                  <div className="text-bank-light font-semibold text-sm sm:text-base">
-                    Support Chat – Session #{currentSession.id}
+                <div className="flex items-center gap-2 min-w-0">
+                  <button
+                    onClick={() => setDrawerOpen(true)}
+                    className="md:hidden p-1 text-bank-muted hover:text-bank-light"
+                    aria-label="Open chat list"
+                  >
+                    <Menu size={20} />
+                  </button>
+                  <div className="text-bank-light font-semibold text-sm sm:text-base truncate">
+                    Session #{currentSession.id}
                   </div>
                 </div>
                 {currentSession.status === 'open' && (
                   <button
                     onClick={closeSession}
-                    className="text-red-400 flex items-center gap-1 hover:text-red-300 transition text-xs sm:text-sm"
+                    className="text-red-400 flex items-center gap-1 hover:text-red-300 transition text-xs sm:text-sm flex-shrink-0"
                   >
                     <XCircle size={16} /> Close
                   </button>
@@ -268,7 +273,7 @@ export default function SupportPage() {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Input area */}
+              {/* Input */}
               {currentSession.status === 'open' && (
                 <div className="border-t border-bank-border p-3 sm:p-4 bg-bank-surface flex gap-2">
                   <input
@@ -292,6 +297,12 @@ export default function SupportPage() {
             <div className="flex-1 flex flex-col items-center justify-center text-bank-muted p-6">
               <MessageCircle size={48} className="mb-3 opacity-40" />
               <p className="text-center">Select a conversation or start a new chat</p>
+              <button
+                onClick={createNewSession}
+                className="mt-4 btn-primary text-sm py-2 px-6"
+              >
+                + New Chat
+              </button>
             </div>
           )}
         </div>

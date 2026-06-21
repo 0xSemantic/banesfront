@@ -1,17 +1,16 @@
 /**
- * Credex Bank - Profile Page (Mobile-Optimized)
+ * Credex Bank - Profile Page (Fully Responsive)
  */
 import { useState } from 'react'
 import {
   User, Mail, Phone, MapPin, Calendar, Shield, Lock, CheckCircle,
-  Edit2, ChevronRight
+  Edit2
 } from 'lucide-react'
 import { useAuthStore } from '../store'
 import api from '../utils/api'
 import { formatDate } from '../utils/helpers'
-import { PageHeader, FormGroup, LoadingButton, Alert, Modal } from '../components/ui'
+import { PageHeader, FormGroup, LoadingButton, Modal } from '../components/ui'
 import toast from 'react-hot-toast'
-import clsx from 'clsx'
 
 export default function ProfilePage() {
   const { user, refreshProfile } = useAuthStore()
@@ -68,13 +67,13 @@ export default function ProfilePage() {
     <div className="max-w-2xl mx-auto space-y-6 px-3 sm:px-0">
       <PageHeader title="Profile" subtitle="Manage your personal information" />
 
-      {/* ── Profile Header Card ── */}
+      {/* ── Profile Header ── */}
       <div className="bank-card p-4 sm:p-6 flex flex-col sm:flex-row items-center gap-4 sm:gap-5">
         <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold text-white flex-shrink-0"
           style={{ background: 'linear-gradient(135deg, #1d4ed8, #0891b2)' }}>
           {user?.full_name?.charAt(0) || 'U'}
         </div>
-        <div className="flex-1 w-full text-center sm:text-left">
+        <div className="flex-1 w-full text-center sm:text-left min-w-0">
           <div className="text-lg font-bold text-bank-light break-words">{user?.full_name}</div>
           <div className="text-sm text-bank-muted break-all">{user?.email}</div>
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-2">
@@ -89,7 +88,7 @@ export default function ProfilePage() {
             )}
           </div>
         </div>
-        <button onClick={() => setEditing(e => !e)} className="btn-secondary text-xs py-2 px-4 w-full sm:w-auto">
+        <button onClick={() => setEditing(e => !e)} className="btn-secondary text-xs py-2 px-4 w-full sm:w-auto sm:flex-shrink-0">
           <Edit2 size={13} className="inline mr-1" /> {editing ? 'Cancel' : 'Edit'}
         </button>
       </div>
@@ -102,21 +101,21 @@ export default function ProfilePage() {
               style={{ background: 'rgba(245,158,11,0.15)' }}>
               <Shield size={16} className="text-amber-400" />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="text-sm font-semibold text-bank-light">Identity Verification</div>
-              <div className="text-xs text-bank-muted">
+              <div className="text-xs text-bank-muted break-words">
                 {user?.kyc_status === 'rejected' ? 'Verification failed. Please resubmit.' : 'Submit KYC to unlock all features.'}
               </div>
             </div>
           </div>
-          <button onClick={handleKycSubmit} className="btn-primary text-xs py-2 px-4 w-full sm:w-auto">
+          <button onClick={handleKycSubmit} className="btn-primary text-xs py-2 px-4 w-full sm:w-auto sm:flex-shrink-0">
             {user?.kyc_status === 'pending' ? 'Resubmit' : 'Verify Now'}
           </button>
         </div>
       )}
 
       {/* ── Personal Info ── */}
-      <div className="bank-card p-4 sm:p-5">
+      <div className="bank-card p-4 sm:p-5 overflow-hidden">
         <h3 className="text-sm font-bold text-bank-light mb-4 flex items-center gap-2">
           <User size={15} className="text-bank-muted flex-shrink-0" /> Personal Information
         </h3>
@@ -158,7 +157,7 @@ export default function ProfilePage() {
               <div key={label} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
                 <Icon size={14} className="text-bank-muted flex-shrink-0" />
                 <span className="text-xs text-bank-muted w-20 sm:w-28 flex-shrink-0">{label}</span>
-                <span className="text-sm text-bank-light break-words flex-1 min-w-0">{value}</span>
+                <span className="text-sm text-bank-light break-all flex-1 min-w-0">{value}</span>
               </div>
             ))}
           </div>
@@ -170,12 +169,12 @@ export default function ProfilePage() {
         <h3 className="text-sm font-bold text-bank-light mb-4 flex items-center gap-2">
           <Lock size={15} className="text-bank-muted flex-shrink-0" /> Security
         </h3>
-        <div className="flex items-center justify-between py-3 border-b border-bank-border">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-3 border-b border-bank-border gap-2 sm:gap-0">
           <div>
             <div className="text-sm font-semibold text-bank-light">Password</div>
             <div className="text-xs text-bank-muted">Last changed: Unknown</div>
           </div>
-          <button onClick={() => setShowChangePass(true)} className="btn-secondary text-xs py-2 px-4">Change</button>
+          <button onClick={() => setShowChangePass(true)} className="btn-secondary text-xs py-2 px-4 w-full sm:w-auto">Change</button>
         </div>
         <div className="flex items-center justify-between py-3">
           <div>
