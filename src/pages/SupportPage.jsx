@@ -46,7 +46,8 @@ export default function SupportPage() {
       return;
     }
 
-    const wsUrl = `${import.meta.env.VITE_WS_URL || 'ws://localhost:8000'}/ws/chat/${currentSession.id}?token=${token}`;
+    // 🔧 HARDCODED WebSocket URL (no env var)
+    const wsUrl = `wss://banesco-9drg.onrender.com/ws/chat/${currentSession.id}?token=${token}`;
     const socket = new WebSocket(wsUrl);
     
     socket.onopen = () => {
@@ -57,7 +58,6 @@ export default function SupportPage() {
       try {
         const data = JSON.parse(event.data);
         if (data.type === 'new_message') {
-          // Replace temporary message if needed, or just add
           setMessages(prev => [...prev, data.message]);
         }
       } catch (err) {
@@ -101,7 +101,6 @@ export default function SupportPage() {
       if (ws?.readyState !== WebSocket.OPEN) setError('Disconnected. Please refresh the page.');
       return;
     }
-    // Add message to local state immediately for instant feedback
     const tempMessage = {
       id: Date.now(),
       sender_id: user.id,
